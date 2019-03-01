@@ -1,0 +1,62 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.1.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 45e910e61891b1e722d2a9773f22fe02baba98b1eb02875a9116fe4b73cbe78d
+
+name:           opcon
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/githubuser/opcon#readme>
+homepage:       https://github.com/githubuser/opcon#readme
+bug-reports:    https://github.com/githubuser/opcon/issues
+author:         Author name here
+maintainer:     example@example.com
+copyright:      2019 Author name here
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+    ChangeLog.md
+
+source-repository head
+  type: git
+  location: https://github.com/githubuser/opcon
+
+library
+  exposed-modules:
+      Class
+      Hierarchy
+      HierarchyNode
+      Instances
+      Types
+  other-modules:
+      Paths_opcon
+  hs-source-dirs:
+      src
+  build-depends:
+      base >=4.7 && <5
+    , containers
+    , graphite
+    , graphviz
+    , hashable
+    , microlens
+    , microlens-mtl
+    , microlens-th
+    , mtl
+    , text
+  default-language: Haskell2010
+
+executable opcon-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_opcon
+  hs-source-dirs:
+      app
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , opcon
+  default-language: Haskell2010
