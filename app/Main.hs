@@ -77,23 +77,23 @@ genDiv = do
   mkHierarchy "XX Div" Division [b1, b2, b3, b] []
 
 
-bn :: Hierarchy String Echelon
-bn =
-  let mn x = mkHierarchyNodeWith (Just x)
-      mne = mkHierarchyNodeWith Nothing
-      mh = mkHierarchyWith
-      s1 = mh (mne 0) Squad (mn "Z Sq" 1) [] []
-      s2 = mh (mne 2) Squad (mn "X Sq" 3) [] []
+-- bn :: Hierarchy String Echelon
+-- bn =
+--   let mn x = mkHierarchyNodeWith (Just x)
+--       mne = mkHierarchyNodeWith Nothing
+--       mh = mkHierarchyWith
+--       s1 = mh (mne 0) Squad (mn "Z Sq" 1) [] []
+--       s2 = mh (mne 2) Squad (mn "X Sq" 3) [] []
 
-      p1 = mh (mne 4) Platoon (mn "1st" 5) [] []
-      p2 = mh (mne 6) Platoon (mn "2nd" 7) [] []
-      p3 = mh (mne 8) Platoon (mn "3rd" 9) [] []
+--       p1 = mh (mne 4) Platoon (mn "1st" 5) [] []
+--       p2 = mh (mne 6) Platoon (mn "2nd" 7) [] []
+--       p3 = mh (mne 8) Platoon (mn "3rd" 9) [] []
 
-      c1 = mh (mne 10) Company (mn "A" 11) [p1, p2] []
-      c2 = mh (mne 12) Company (mn "B" 13) [p3] [s2]
-      c3 = mh (mne 14) Company (mn "C" 15) [] []
-  in
-    mh (mne 10) Battalion (mn "2 Bn" 11) [c1, c2, c3] [s1]
+--       c1 = mh (mne 10) Company (mn "A" 11) [p1, p2] []
+--       c2 = mh (mne 12) Company (mn "B" 13) [p3] [s2]
+--       c3 = mh (mne 14) Company (mn "C" 15) [] []
+--   in
+--     mh (mne 10) Battalion (mn "2 Bn" 11) [c1, c2, c3] [s1]
 
 
 main :: IO ()

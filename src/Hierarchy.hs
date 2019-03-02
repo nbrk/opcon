@@ -74,6 +74,8 @@ mkHierarchyWith ean hqe hqn organichs opconhs =
       fromArcsList $ eaArc : organicArcs ++ opconArcs
 
 
+
+
 -- | Get the HQ node (of highest echelon) of the hierarchy
 getHqNode :: Organization a
           => Hierarchy a e -> HierarchyNode a
@@ -95,9 +97,12 @@ getHqCommand hier =
 getEANode :: Organization a
           => Hierarchy a e -> HierarchyNode a
 getEANode hier =
-  case arcs hier of
-    [] -> error "getEANode: no command connections"
-    eaArc:_ -> originVertex eaArc
+  let srcns = filter (isSource hier) (vertices hier)
+  in
+    case srcns of
+      [] -> error "getEANode: no EA node"
+      _:_:_ -> error "getEANode: many EA nodes"
+      ean:[] -> ean
 
 
 -- | Replace EA ghost node of the hier with the given one
@@ -105,11 +110,21 @@ replaceEANode :: (Organization a, EchelonLevel e)
           => HierarchyNode a -> Command e -> Hierarchy a e
           -> Hierarchy a e
 replaceEANode n cmd hier =
-  let (Arc _fr to _cmd):as = arcs hier
+  let ean = getEANode hier
   in
     if echelonSuperiorOrEqual (echelonOf cmd) [hier]
-    then fromArcsList $ (Arc n to cmd):as
+    then
+      let eaarcs = outboundingArcs hier ean
+      in
+        case eaarcs of
+          [] -> error "replaceEANode: no EA command"
+          _:_:_ -> error "replaceEANode: many EA commands"
+          eaarc@(Arc _fr to cmd):[] ->
+              insertArc
+                (Arc n to cmd)
+                (removeArc eaarc hier)
     else error "replaceEANode: new echelon is too low"
+
 
 
 -- | Find the first node satisfying the predicate
