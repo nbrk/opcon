@@ -1,6 +1,6 @@
-module Command where
+module Opcon.Command where
 
-import Types
+import Opcon.Types
 
 
 -- | Echelon level of the command link

@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 9ce0b58190d4e97c065cba46d205d644abad005c9e11fe633a247f7db8bd6d1c
+-- hash: cd949a28df4e712f57c5d7eafc9129ed35ae74e7686e6d4420210da81e760b3e
 
 name:           opcon
 version:        0.1.0.0
@@ -27,12 +27,15 @@ source-repository head
 
 library
   exposed-modules:
-      Class
-      Command
-      Hierarchy
-      HierarchyNode
-      Instances
-      Types
+      Opcon
+      Opcon.Class
+      Opcon.Command
+      Opcon.Example
+      Opcon.Hierarchy
+      Opcon.HierarchyNode
+      Opcon.Instances
+      Opcon.Plot
+      Opcon.Types
   other-modules:
       Paths_opcon
   hs-source-dirs:

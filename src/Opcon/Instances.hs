@@ -1,9 +1,9 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
-module Instances where
+module Opcon.Instances where
 
-import Class
-import Types
+import Opcon.Class
+import Opcon.Types
 
 import Data.GraphViz.Printing
 import Data.Hashable
@@ -25,7 +25,7 @@ instance Organization a => Ord (HierarchyNode a) where
 
 
 -- | Nodes as dot objects
-instance Organization a => PrintDot (HierarchyNode a) where
+instance (Show a, Organization a) => PrintDot (HierarchyNode a) where
   unqtDot (HierarchyNode (Just a) h) =
     let t = pack $ (show a) ++ " (" ++ show h ++ ")"
     in

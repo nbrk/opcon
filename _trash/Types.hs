@@ -1,4 +1,4 @@
-module Types where
+module Opcon.Types where
 
 import Class
 

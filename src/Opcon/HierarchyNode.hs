@@ -1,7 +1,7 @@
-module HierarchyNode where
+module Opcon.HierarchyNode where
 
-import Class
-import Types
+import Opcon.Class
+import Opcon.Types
 
 import Data.Unique
 import Data.Maybe
@@ -31,3 +31,13 @@ mkHierarchyNodeWith a hash =
 -- | Is this a ghost EA (Echelons Above) node?
 isEANode :: HierarchyNode a -> Bool
 isEANode n = isNothing $ hierarchyNodeData n
+
+
+-- | Construct showable path for the given chain of command
+mkStringPath :: Show a => [HierarchyNode a] -> [String]
+mkStringPath supns =
+  map
+    ( \n ->
+        show (fromJust (hierarchyNodeData n))
+    )
+    supns

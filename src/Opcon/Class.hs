@@ -1,4 +1,4 @@
-module Class where
+module Opcon.Class where
 
 import Data.Hashable
 

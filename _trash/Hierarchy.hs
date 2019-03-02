@@ -1,4 +1,4 @@
-module Hierarchy where
+module Opcon.Hierarchy where
 
 import Class
 import Types
