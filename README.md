@@ -9,6 +9,7 @@ A hierarchy is modelled as DAG (Directed Acyclic Graph), with:
 
 There are both functional and monadic (state) combinators to work with the hierarchies.
 
+![Example](doc/example.png)
 
 ## User data
 The user data is abstract, the only requirement is it to be `Eq` (and `Show` if the plotting is considered).
