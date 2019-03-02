@@ -18,7 +18,7 @@ data HierarchyNode a
   = HierarchyNode
   { hierarchyNodeData :: Maybe a
   , hierarchyNodeHash :: Int
-  } deriving (Eq, Ord, Show)
+  } deriving (Eq, Show)
 
 
 -- | The military hierarchy of formations of

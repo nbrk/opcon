@@ -10,6 +10,7 @@ import Control.Monad
 import Data.Unique
 import Data.Graph.DGraph
 import Data.Graph.Types
+import Data.Graph.Traversal
 import Data.Maybe
 import qualified Data.List as L
 
@@ -209,3 +210,63 @@ getChainOfCommand n hier =
     if isEANode supn
     then []
     else supn : getChainOfCommand supn hier
+
+
+-- | Detach a sub-hierarchy from the big hierarchy.
+--   Returns the detachment and the remains of the force.
+--   All of the provided nodes MUST already have unique
+--   hashes (i.e. `hierarchyNodeHash`) set up.
+detachHierarchyWith :: Organization a
+                    => HierarchyNode a -> HierarchyNode a
+                    -> Hierarchy a e
+                    -> (Hierarchy a e, Hierarchy a e)
+detachHierarchyWith detean n hier =
+  let detsupn = getSuperior n hier
+      detcmd = getCommand n hier
+
+      detns = bfsVertices hier n
+      vves = concatMap (incidentEdgeTriples hier) detns
+      detas = map
+               (\(n1, n2, c) -> Arc n1 n2 c)
+               vves
+      dethier =
+        removeVertex detsupn $
+          fromArcsList $
+            (Arc detean n (toOrganic detcmd)) : detas
+      hier' = removeVertices detns hier
+  in
+    (dethier, hier')
+
+
+-- | Detach a sub-hierarchy from the big hierarchy.
+--   Returns the detachment and the remains of the force.
+detachHierarchy :: Organization a
+                => HierarchyNode a -> Hierarchy a e
+                -> IO (Hierarchy a e, Hierarchy a e)
+detachHierarchy n hier = do
+  detean <- mkHierarchyNode Nothing -- ghost EA node
+  return $
+    detachHierarchyWith detean n hier
+
+
+-- | Attach a sub-hierarchy to the given node (hq) inside
+--   of a hierarchy. The given hq-node's echelon must be
+--   superior to the attaching force.
+attachHierarchy :: (Organization a, EchelonLevel e)
+                => Hierarchy a e -> Bool ->HierarchyNode a
+                -> Hierarchy a e -> Hierarchy a e
+attachHierarchy subh organic hqn hier =
+  let hierhqe = echelonLevel $ getCommand hqn hier
+      subhhqe =
+        echelonLevel $ getCommand (getHqNode subh) subh
+      conn = if organic then Organic else Opcon
+  in
+    if not (echelonSuperior hierhqe subh)
+    then
+      error $
+        "attachHierarchy: echelon too high for the HQ: "
+        ++ show subhhqe ++ " > " ++ show hierhqe
+    else
+      let subh' = replaceEANode hqn (conn subhhqe) subh
+      in
+        insertArcs (arcs subh') hier

@@ -19,6 +19,10 @@ instance Organization a => Hashable (HierarchyNode a) where
       combine h1 h2 = (h1 * 16777619) `xor` h2
 
 
+instance Organization a => Ord (HierarchyNode a) where
+  n1 `compare` n2 =
+    hierarchyNodeHash n1 `compare` hierarchyNodeHash n2
+
 
 -- | Nodes as dot objects
 instance Organization a => PrintDot (HierarchyNode a) where
