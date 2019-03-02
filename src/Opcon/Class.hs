@@ -3,7 +3,7 @@ module Opcon.Class where
 import Data.Hashable
 
 -- | Neccessary info about the echelon level
-class (Eq e, Bounded e, Ord e, Enum e, Show e) =>
+class (Ord e, Show e) =>
   EchelonLevel e where
 
 

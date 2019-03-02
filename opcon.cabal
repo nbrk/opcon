@@ -4,16 +4,18 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 52520d24bb1c2f35c9a78aef6d616f6089e36dbe4463c8a5e60fc884c7c6996b
+-- hash: bccaeb6d278b70413e83da7afd6dc247e8ef92be2df6bb4d9743aa6c4a8ad309
 
 name:           opcon
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/opcon#readme>
-homepage:       https://github.com/githubuser/opcon#readme
-bug-reports:    https://github.com/githubuser/opcon/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2019 Author name here
+synopsis:       DAG containers for dynamic, echeloned military hierarchies
+description:    Please see the README on GitHub at <https://github.com/nbrk/opcon#readme>
+category:       Data
+homepage:       https://github.com/githubuser/nbrk#readme
+bug-reports:    https://github.com/githubuser/nbrk/issues
+author:         Nikolay Burkov
+maintainer:     nbrk@linklevel.net
+copyright:      2019 Nikolay Burkov
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
@@ -23,7 +25,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/opcon
+  location: https://github.com/githubuser/nbrk
 
 library
   exposed-modules:
@@ -47,9 +49,6 @@ library
     , graphite
     , graphviz
     , hashable
-    , microlens
-    , microlens-mtl
-    , microlens-th
     , mtl
     , text
   default-language: Haskell2010
