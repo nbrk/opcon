@@ -27,7 +27,7 @@ instance Organization a => PrintDot (HierarchyNode a) where
     in
       addQuotes (pack "\'") $ unqtText t
   unqtDot (HierarchyNode Nothing h) =
-    let t = pack $ "*EA*" ++ " (" ++ show h ++ ")"
+    let t = pack $ "*** EA ***" ++ " (" ++ show h ++ ")"
     in
       addQuotes (pack "\'") $ unqtText t
 

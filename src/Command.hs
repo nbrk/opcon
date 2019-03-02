@@ -13,3 +13,15 @@ echelonOf (Opcon e) = e
 isOrganic :: Command e -> Bool
 isOrganic (Organic _) = True
 isOrganic _ = False
+
+
+-- | Change command nature type to organic
+toOrganic :: Command e -> Command e
+toOrganic (Organic e) = Organic e
+toOrganic (Opcon e) = Opcon e
+
+
+-- | Change command nature type to opcon
+toOpcon :: Command e -> Command e
+toOpcon (Organic e) = Opcon e
+toOpcon (Opcon e) = Opcon e

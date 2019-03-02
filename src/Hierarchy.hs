@@ -10,15 +10,27 @@ import Control.Monad
 import Data.Unique
 import Data.Graph.DGraph
 import Data.Graph.Types
+import Data.Maybe
+import qualified Data.List as L
+
 
 
 -- | Check if the echelon is superior to the given hiers
-superiorOver :: (Organization a, EchelonLevel e)
+echelonSuperior :: (Organization a, EchelonLevel e)
              => e -> [Hierarchy a e] -> Bool
-superiorOver hqe hiers =
+echelonSuperior hqe hiers =
   let es = map (echelonOf . getHqCommand) hiers
   in
     all (\e -> hqe > e) es
+
+
+-- | Check if the echelon is superior to the given hiers
+echelonSuperiorOrEqual :: (Organization a, EchelonLevel e)
+             => e -> [Hierarchy a e] -> Bool
+echelonSuperiorOrEqual hqe hiers =
+  let es = map (echelonOf . getHqCommand) hiers
+  in
+    all (\e -> hqe >= e) es
 
 
 -- | Construct a hier with organic/opcon subordinate hiers.
@@ -30,26 +42,31 @@ mkHierarchy hq hqe organichs opconhs = do
   ean <- mkHierarchyNode Nothing -- ghost EA node
   hqn <- mkHierarchyNode (Just hq)
   return $
-    mkHierarchyWith ean (Organic hqe) hqn organichs opconhs
+    mkHierarchyWith ean hqe hqn organichs opconhs
 
 
 -- | Construct a hier with organic/opcon subordinate hiers.
 --   All of the provided nodes MUST already have unique
 --   hashes (i.e. `hierarchyNodeHash`) set up.
 mkHierarchyWith :: (Organization a, EchelonLevel e)
-                => HierarchyNode a -> Command e
+                => HierarchyNode a -> e
                 -> HierarchyNode a -> [Hierarchy a e]
                 -> [Hierarchy a e] -> Hierarchy a e
-mkHierarchyWith ean hqcmd hqn organichs opconhs =
-  let eaArc = Arc ean hqn hqcmd
-      organicArcs = mkArcs hqn organichs
-      opconArcs = mkArcs hqn opconhs
-      mkArcs hqn hiers = concatMap
-                         (\h -> arcs (replaceEA hqn h))
-                         hiers
+mkHierarchyWith ean hqe hqn organichs opconhs =
+  -- XXX BUG
+  let eaArc = Arc ean hqn (Organic hqe)
+      organicArcs = mkArcs hqn organichs toOrganic
+      opconArcs = mkArcs hqn opconhs toOpcon
+      mkArcs hqn hiers f =
+        concatMap
+          (\h -> let cmd = getHqCommand h
+                 in
+                   arcs (replaceEANode hqn (f cmd) h)
+          )
+          hiers
   in
-    if (not (superiorOver (echelonOf hqcmd) organichs)
-       || not (superiorOver (echelonOf hqcmd) opconhs))
+    if (not (echelonSuperior hqe organichs)
+       || not (echelonSuperior hqe opconhs))
     then
       error $ "broken chain of command"
         ++ " (subordinates of higher echelons)"
@@ -57,11 +74,10 @@ mkHierarchyWith ean hqcmd hqn organichs opconhs =
       fromArcsList $ eaArc : organicArcs ++ opconArcs
 
 
-
 -- | Get the HQ node (of highest echelon) of the hierarchy
-getHq :: Organization a
+getHqNode :: Organization a
           => Hierarchy a e -> HierarchyNode a
-getHq hier =
+getHqNode hier =
   case arcs hier of
     [] -> error "getHqNode: no command connections"
     eaArc:_ -> destinationVertex eaArc
@@ -76,19 +92,76 @@ getHqCommand hier =
 
 
 -- | Get the "Echelon Above" ghost node of the hier
-getEA :: Organization a => Hierarchy a e -> HierarchyNode a
-getEA hier =
+getEANode :: Organization a
+          => Hierarchy a e -> HierarchyNode a
+getEANode hier =
   case arcs hier of
-    [] -> error "getEA: no command connections"
+    [] -> error "getEANode: no command connections"
     eaArc:_ -> originVertex eaArc
 
 
 -- | Replace EA ghost node of the hier with the given one
-replaceEA :: Organization a
-          => HierarchyNode a -> Hierarchy a e
+replaceEANode :: (Organization a, EchelonLevel e)
+          => HierarchyNode a -> Command e -> Hierarchy a e
           -> Hierarchy a e
-replaceEA n hier =
-  let (Arc fr to e):as = arcs hier
+replaceEANode n cmd hier =
+  let (Arc _fr to _cmd):as = arcs hier
   in
-    fromArcsList $ (Arc n to e):as
+    if echelonSuperiorOrEqual (echelonOf cmd) [hier]
+    then fromArcsList $ (Arc n to cmd):as
+    else error "replaceEANode: new echelon is too low"
 
+
+-- | Find the first node satisfying the predicate
+findNode :: (a -> Bool) -> Hierarchy a e
+         -> Maybe (HierarchyNode a)
+findNode pred hier =
+  let ns = vertices hier
+  in
+    L.find
+      (\n -> let dat = hierarchyNodeData n
+             in
+               isJust dat && pred (fromJust dat)
+      )
+      ns
+
+
+-- | Partition nodes wrt the predicate
+partitionNodes :: (a -> Bool) -> Hierarchy a e
+               -> ([HierarchyNode a], [HierarchyNode a])
+partitionNodes pred hier =
+  let ns = vertices hier
+  in
+    L.partition
+      (\n -> let dat = hierarchyNodeData n
+             in
+               isJust dat && pred (fromJust dat)
+      )
+      ns
+
+
+-- | Find all nodes that satisfy the predicate
+findNodes :: (a -> Bool) -> Hierarchy a e
+             -> [HierarchyNode a]
+findNodes pred hier =
+  fst $ partitionNodes pred hier
+
+
+-- | Get the superior (i.e. the commander) of a node
+getSuperior :: Organization a
+            => HierarchyNode a -> Hierarchy a e
+            -> Maybe (HierarchyNode a)
+getSuperior n hier =
+  case inboundingArcs hier n of
+    [] -> Nothing
+    a:_ -> Just (originVertex a)
+
+
+-- | Get all inferiors (i.e. subordinates) of the node
+getInferiors :: Organization a
+            => HierarchyNode a -> Hierarchy a e
+            -> [HierarchyNode a]
+getInferiors n hier =
+  case outboundingArcs hier n of
+    [] -> []
+    as -> map destinationVertex as
