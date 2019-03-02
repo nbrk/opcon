@@ -2,8 +2,8 @@ module Opcon.Types where
 
 import Opcon.Class
 
-import Data.Hashable
 import Data.Graph.DGraph
+import Control.Monad.State
 
 
 -- | Type of command connection
@@ -25,3 +25,6 @@ data HierarchyNode a
 --   type `a` divided by echelons of type `e`
 type Hierarchy a e = DGraph (HierarchyNode a) (Command e)
 
+
+-- | State monad for sequential manipulations on a hier
+type HierarchyM a e = StateT (Hierarchy a e) IO

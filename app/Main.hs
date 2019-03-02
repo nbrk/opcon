@@ -7,16 +7,32 @@ import Control.Concurrent
 
 main :: IO ()
 main = do
-  -- a battalion
-  bn <- genBn "101 Inf. Bn"
+  h <- startHierarchy $ do
+    -- a battalion
+    bn <- lift $ genBn "101 Inf. Bn"
 
-  -- a special force company
-  co <- genCoy "SF Coy"
+    -- working on the battalion from now on
+    put bn
 
-  -- reinforce the battalion
-  let bn' = attachHierarchy co False bn
+    -- a special force company
+    co <- lift $ genCoy "SF Coy"
 
-  plotHierarchy bn'
+    -- a special platoon
+    plt <- mkHierarchyM (mkUnit "ZZ Plt") Platoon [] []
+
+    -- reinforce the battalion with the company
+    attachHierarchyM co False
+
+    -- locate the SF company HQ and reinforce it
+    (Just hq) <- findNodeM (\u -> unitName u == "SF Coy")
+    attachHierarchyToHqM plt False hq
+
+    -- degrade some elements of the battalion
+    hqs <- findAllNodesM (\u -> unitName u == "3rd")
+    mapM_ detachHierarchyM hqs
+
+
+  plotHierarchy h
 
 
   threadDelay 600000000
