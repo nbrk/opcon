@@ -4,9 +4,9 @@ import Types
 
 
 -- | Echelon level of the command link
-echelonOf :: Command e -> e
-echelonOf (Organic e) = e
-echelonOf (Opcon e) = e
+echelonLevel :: Command e -> e
+echelonLevel (Organic e) = e
+echelonLevel (Opcon e) = e
 
 
 -- | Is this an organic attachment

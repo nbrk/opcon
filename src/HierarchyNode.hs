@@ -4,6 +4,7 @@ import Class
 import Types
 
 import Data.Unique
+import Data.Maybe
 
 
 -- | Construct a new node (maybe with no data) and hash
@@ -27,3 +28,6 @@ mkHierarchyNodeWith a hash =
   }
 
 
+-- | Is this a ghost EA (Echelons Above) node?
+isEANode :: HierarchyNode a -> Bool
+isEANode n = isNothing $ hierarchyNodeData n

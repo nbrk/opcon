@@ -54,7 +54,7 @@ genBn nam = do
   c3 <- genCoy "C"
   p <- mkHierarchy "Rc Plt" Platoon [] []
 
-  mkHierarchy nam Battalion [c1, c2, c3, p] []
+  mkHierarchy nam Battalion [c1, c2, c3] [p]
 
 
 genBde :: String -> IO (Hierarchy String Echelon)
@@ -64,7 +64,7 @@ genBde nam = do
   b3 <- genBn "3 Bn"
   c <- mkHierarchy "Arty coy" Company [] []
 
-  mkHierarchy nam Brigade [b1, b2, b3] []
+  mkHierarchy nam Brigade [b1, b2, b3] [c]
 
 
 genDiv :: IO (Hierarchy String Echelon)

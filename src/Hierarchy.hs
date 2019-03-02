@@ -15,37 +15,41 @@ import qualified Data.List as L
 
 
 
--- | Check if the echelon is superior to the given hiers
+-- | Check if the echelon level is superior to the given
+--   hierarchy. I.e. an officer of rank `e` could take
+--   the command of the hierarchy `hier`.
 echelonSuperior :: (Organization a, EchelonLevel e)
-             => e -> [Hierarchy a e] -> Bool
-echelonSuperior hqe hiers =
-  let es = map (echelonOf . getHqCommand) hiers
+             => e -> Hierarchy a e -> Bool
+echelonSuperior e hier =
+  let hqe = getCommand (getHqNode hier) hier
   in
-    all (\e -> hqe > e) es
+    e > echelonLevel hqe
 
 
--- | Check if the echelon is superior to the given hiers
-echelonSuperiorOrEqual :: (Organization a, EchelonLevel e)
-             => e -> [Hierarchy a e] -> Bool
-echelonSuperiorOrEqual hqe hiers =
-  let es = map (echelonOf . getHqCommand) hiers
+-- | Check if the echelon level is equal to that of the
+--   given hierarchy's hq.
+echelonEqual :: (Organization a, EchelonLevel e)
+             => e -> Hierarchy a e -> Bool
+echelonEqual e hier =
+  let hqe = getCommand (getHqNode hier) hier
   in
-    all (\e -> hqe >= e) es
+    e == echelonLevel hqe
 
 
--- | Construct a hier with organic/opcon subordinate hiers.
---   Conveniently uses `IO` to generate Unique node hashes.
+-- | Construct a military hierarchy with organic and/or
+--   OPCON subordinate hierarchies.
 mkHierarchy :: (Organization a, EchelonLevel e)
-            => a -> e -> [Hierarchy a e] -> [Hierarchy a e]
-            -> IO (Hierarchy a e)
+            => a -> e -> [Hierarchy a e]
+            -> [Hierarchy a e] -> IO (Hierarchy a e)
 mkHierarchy hq hqe organichs opconhs = do
   ean <- mkHierarchyNode Nothing -- ghost EA node
-  hqn <- mkHierarchyNode (Just hq)
+  hqn <- mkHierarchyNode (Just hq) -- this hq node
   return $
     mkHierarchyWith ean hqe hqn organichs opconhs
 
 
--- | Construct a hier with organic/opcon subordinate hiers.
+-- | Construct a military hierarchy with organic and/or
+--   OPCON subordinate hierarchies.
 --   All of the provided nodes MUST already have unique
 --   hashes (i.e. `hierarchyNodeHash`) set up.
 mkHierarchyWith :: (Organization a, EchelonLevel e)
@@ -53,20 +57,20 @@ mkHierarchyWith :: (Organization a, EchelonLevel e)
                 -> HierarchyNode a -> [Hierarchy a e]
                 -> [Hierarchy a e] -> Hierarchy a e
 mkHierarchyWith ean hqe hqn organichs opconhs =
-  -- XXX BUG
   let eaArc = Arc ean hqn (Organic hqe)
       organicArcs = mkArcs hqn organichs toOrganic
       opconArcs = mkArcs hqn opconhs toOpcon
       mkArcs hqn hiers f =
         concatMap
-          (\h -> let cmd = getHqCommand h
+          (\h -> let cmd = getCommand (getHqNode h) h
                  in
                    arcs (replaceEANode hqn (f cmd) h)
           )
           hiers
   in
-    if (not (echelonSuperior hqe organichs)
-       || not (echelonSuperior hqe opconhs))
+    if not $
+       ( and (fmap (echelonSuperior hqe) organichs)
+       || and (fmap (echelonSuperior hqe) opconhs))
     then
       error $ "broken chain of command"
         ++ " (subordinates of higher echelons)"
@@ -76,21 +80,17 @@ mkHierarchyWith ean hqe hqn organichs opconhs =
 
 
 
--- | Get the HQ node (of highest echelon) of the hierarchy
+-- | Get the HQ, i.e. the node of highest echelon of the
+--   hierarchy (ecluding the EA)
 getHqNode :: Organization a
           => Hierarchy a e -> HierarchyNode a
 getHqNode hier =
-  case arcs hier of
-    [] -> error "getHqNode: no command connections"
-    eaArc:_ -> destinationVertex eaArc
-
-
--- | Get the hier's HQ command link type and echelon
-getHqCommand :: Organization a =>Hierarchy a e -> Command e
-getHqCommand hier =
-  case arcs hier of
-    [] -> error "getHqCommand: no command connections"
-    eaArc:_ -> attribute eaArc
+  let ean = getEANode hier
+  in
+    case outboundingArcs hier ean of
+      [] -> error "getHqNode: no command from EA"
+      _:_:_ -> error "getHqNode: many commands from EA"
+      a:[] -> destinationVertex a
 
 
 -- | Get the "Echelon Above" ghost node of the hier
@@ -112,14 +112,15 @@ replaceEANode :: (Organization a, EchelonLevel e)
 replaceEANode n cmd hier =
   let ean = getEANode hier
   in
-    if echelonSuperiorOrEqual (echelonOf cmd) [hier]
+    if echelonSuperior (echelonLevel cmd) hier
+       || echelonEqual (echelonLevel cmd) hier
     then
       let eaarcs = outboundingArcs hier ean
       in
         case eaarcs of
           [] -> error "replaceEANode: no EA command"
           _:_:_ -> error "replaceEANode: many EA commands"
-          eaarc@(Arc _fr to cmd):[] ->
+          eaarc@(Arc _fr to _cmd):[] ->
               insertArc
                 (Arc n to cmd)
                 (removeArc eaarc hier)
@@ -156,20 +157,35 @@ partitionNodes pred hier =
 
 
 -- | Find all nodes that satisfy the predicate
-findNodes :: (a -> Bool) -> Hierarchy a e
+findAllNodes :: (a -> Bool) -> Hierarchy a e
              -> [HierarchyNode a]
-findNodes pred hier =
+findAllNodes pred hier =
   fst $ partitionNodes pred hier
 
 
 -- | Get the superior (i.e. the commander) of a node
 getSuperior :: Organization a
             => HierarchyNode a -> Hierarchy a e
-            -> Maybe (HierarchyNode a)
+            -> HierarchyNode a
 getSuperior n hier =
   case inboundingArcs hier n of
-    [] -> Nothing
-    a:_ -> Just (originVertex a)
+    [] -> n -- the EA node
+    a:_ -> originVertex a
+
+
+-- | Get the command uplink of the node (i.e. the
+--   connection to the node's superior officer)
+getCommand :: Organization a
+           => HierarchyNode a -> Hierarchy a e
+           -> Command e
+getCommand n hier =
+  let as = inboundingArcs hier n
+  in
+    case as of
+      [] -> error "getCommand: no command connections"
+      _:_:_ ->error "getCommand: many command connections"
+      (Arc _ _ cmd):[] -> cmd
+
 
 
 -- | Get all inferiors (i.e. subordinates) of the node
@@ -180,3 +196,16 @@ getInferiors n hier =
   case outboundingArcs hier n of
     [] -> []
     as -> map destinationVertex as
+
+
+-- | Get the Chain of Command up to the topmost echelon
+--   level, excluding the EA node
+getChainOfCommand :: Organization a
+                  => HierarchyNode a -> Hierarchy a e
+                  -> [HierarchyNode a]
+getChainOfCommand n hier =
+  let supn = getSuperior n hier
+  in
+    if isEANode supn
+    then []
+    else supn : getChainOfCommand supn hier
